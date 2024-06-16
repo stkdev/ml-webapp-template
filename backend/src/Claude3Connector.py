@@ -58,15 +58,6 @@ class Claude3Connector:
 
         data = self.__PIL_to_bytes(img, size_max=size_max)
 
-        # 大きすぎる場合リサイズ
-        # if (2*size_max) < sum(img.size):
-        #     sp = 1 + (max(img.size) // size_max)
-        #     img = img.resize((img.width // sp, img.height // sp))
-        #
-        # buffered = BytesIO()
-        # img.save(buffered, format="PNG")
-        # data = base64.b64encode(buffered.getvalue())
-
         return data
 
     def __image_json_from_bytes(self, content):
