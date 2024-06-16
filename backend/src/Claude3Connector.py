@@ -35,6 +35,18 @@ class Claude3Connector:
         )
         return
 
+    def __PIL_to_bytes(self, img, size_max=1000):
+        # 大きすぎる場合リサイズ
+        if (2*size_max) < sum(img.size):
+            sp = 1 + (max(img.size) // size_max)
+            img = img.resize((img.width // sp, img.height // sp))
+
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        data = base64.b64encode(buffered.getvalue())
+
+        return data
+
 
     def __image_file_to_bytes(self, file_path, size_max=1000):
         # urlの場合
@@ -44,14 +56,16 @@ class Claude3Connector:
         else:
             img = Image.open(file_path)
 
-        # 大きすぎる場合リサイズ
-        if (2*size_max) < sum(img.size):
-            sp = 1 + (max(img.size) // size_max)
-            img = img.resize((img.width // sp, img.height // sp))
+        data = self.__PIL_to_bytes(img, size_max=size_max)
 
-        buffered = BytesIO()
-        img.save(buffered, format="PNG")
-        data = base64.b64encode(buffered.getvalue())
+        # 大きすぎる場合リサイズ
+        # if (2*size_max) < sum(img.size):
+        #     sp = 1 + (max(img.size) // size_max)
+        #     img = img.resize((img.width // sp, img.height // sp))
+        #
+        # buffered = BytesIO()
+        # img.save(buffered, format="PNG")
+        # data = base64.b64encode(buffered.getvalue())
 
         return data
 
@@ -70,6 +84,10 @@ class Claude3Connector:
         content = self.__image_file_to_bytes(file_path, size_max)
         return self.__image_json_from_bytes(content)
 
+    def __image_json_from_PIL(self, img, size_max=1000):
+        content = self.__PIL_to_bytes(img, size_max=size_max)
+        return self.__image_json_from_bytes(content)
+
     def __text_json(self, user_input):
         return {
             "type": "text",
@@ -77,7 +95,7 @@ class Claude3Connector:
         }
 
     def query(self, user_input, images=[], model_key="haiku", max_tokens=500):
-        if isinstance(images, str):
+        if isinstance(images, str) or isinstance(images, Image.Image):
             images = [images]
 
         content = []
@@ -86,6 +104,8 @@ class Claude3Connector:
                 content.append(self.__image_json_from_file(image))
             elif isinstance(image, bytes):
                 content.append(self.__image_json_from_bytes(image))
+            elif isinstance(image, Image.Image):
+                content.append(self.__image_json_from_PIL(image))
         content.append(self.__text_json(user_input))
 
         q = [{"role": "user", "content": content}]
