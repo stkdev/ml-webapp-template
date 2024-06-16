@@ -28,7 +28,7 @@ GOOGLE_API_KEY=
 # ビルドして
 docker compose build
 # 動かす。バックグラウンドで動かす場合は -d 付ける
-docker compose ps
+docker compose up
 ```
 
 - フロント側：
